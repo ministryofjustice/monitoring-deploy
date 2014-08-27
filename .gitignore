@@ -1,0 +1,8 @@
+*.pyc
+.vagrant/
+vendor/
+data/
+salt/master/vagrant/templates/key
+salt/master/vagrant/templates/key.pub
+salt/minions/vagrant/templates/key
+salt/minions/vagrant/templates/key.pub

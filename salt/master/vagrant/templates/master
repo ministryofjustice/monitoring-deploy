@@ -1,0 +1,12 @@
+open_mode: True
+
+pki_dir: /etc/salt/keys
+
+file_roots:
+  base:
+    - /srv/salt/
+    - /srv/salt-formulas/
+
+pillar_roots:
+  base:
+    - /srv/pillars/

@@ -1,0 +1,9 @@
+master: 192.168.33.80
+
+grains:
+  provider: vagrant
+  roles:
+  release_stage: vagrant
+
+pki_dir: /etc/salt/pki/minion
+
