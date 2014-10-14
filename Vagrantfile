@@ -17,7 +17,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # mount salt required folders
     master.vm.synced_folder "salt", "/srv/salt/"
     master.vm.synced_folder "pillars", "/srv/pillars/"
-    #master.vm.synced_folder "vendor/_root", "/srv/salt-formulas", type: "rsync", rsync__args: ["--verbose", "--archive", "--delete", "-z", "-L"]
     master.vm.synced_folder "vendor/_root", "/srv/salt-formulas"
     master.vm.synced_folder "vendor/formula-repos", "/srv/formula-repos"
 
@@ -31,7 +30,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       v.customize ["modifyvm", :id, "--memory", "1024"]
       v.name = "master"
     end
-      
+
     master.vm.provision :salt do |salt|
 
       master_config_dir   = 'salt/master/vagrant/templates/'
@@ -66,7 +65,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       v.customize ["modifyvm", :id, "--memory", "2048"]
       v.name = "monitoring"
     end
-      
+
     monitoring.vm.provision :salt do |salt|
 
       minion_config_dir   = 'salt/minions/vagrant/templates/'
@@ -91,7 +90,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       v.customize ["modifyvm", :id, "--memory", "1024"]
       v.name = node.vm.hostname
     end
-      
+
     node.vm.provision :salt do |salt|
 
       minion_config_dir   = 'salt/minions/vagrant/templates/'
@@ -103,14 +102,5 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
 
   end
-
-  #script = <<-SCRIPT
-  #  mkdir -p /etc/salt
-  #  cp /srv/salt/minions/vagrant/templates/minion /etc/salt/minion
-  #  service salt-minion restart
-  #  sleep 5 # This might not be needed, but why rush these things?
-  #  salt-call state.highstate --local --retcode-passthrough pillar="{htaccess_users: ~}"
-  #SCRIPT
-  #config.vm.provision :shell, inline: script, keep_color: false
 
 end
