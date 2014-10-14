@@ -55,7 +55,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "monitoring" do |monitoring|
 
     monitoring.vm.synced_folder "data/graphite/whisper", "/srv/graphite/storage/whisper", mount_options: ['dmode=777', 'fmode=666'], create: true
-    monitoring.vm.synced_folder "data/elasticsearch", "/var/lib/elasticsearch", mount_options: ['dmode=777', 'fmode=666'], create: true
 
     monitoring.vm.box = "precise64"
     monitoring.vm.box_url = "http://files.vagrantup.com/precise64.box"
