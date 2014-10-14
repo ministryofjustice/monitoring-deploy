@@ -1,9 +1,7 @@
-git@github.com:ministryofjustice/hardening-formula.git==v1.2.0
+git@github.com:ministryofjustice/bootstrap-formula.git==v2.1.0
+git@github.com:ministryofjustice/hardening-formula.git==v1.2.2-rc.lpa.1
 git@github.com:ministryofjustice/firewall-formula.git==v1.1.0
-git@github.com:ministryofjustice/admins-formula.git==v1.0.1
-git@github.com:ministryofjustice/metrics-formula.git==v1.2.0
-git@github.com:ministryofjustice/logstash-formula.git==v1.2.0
-git@github.com:ministryofjustice/sensu-formula.git==handlers
+git@github.com:ministryofjustice/admins-formula.git==v1.3.0
 git@github.com:ministryofjustice/hosts-formula.git==v2.0.0
 
 git@github.com:ministryofjustice/nginx-formula.git==v2.1.0
@@ -13,7 +11,11 @@ git@github.com:ministryofjustice/supervisor-formula.git==v1.0.0
 git@github.com:ministryofjustice/python-formula.git==v1.0.2
 git@github.com:ministryofjustice/repos-formula.git==v1.0.1
 git@github.com:ministryofjustice/apparmor-formula.git==v1.0.1
-git@github.com:ministryofjustice/redis-formula.git==v1.0.1
 
-git@github.com:ministryofjustice/bootstrap-formula.git==v1.0.1
-git@github.com:ministryofjustice/elasticsearch-formula.git==v1.0.4
+git@github.com:ministryofjustice/redis-formula.git==v1.1.0-rc.lpa.2
+
+git@github.com:ministryofjustice/metrics-formula.git==v1.2.0
+git@github.com:ministryofjustice/logstash-formula.git==v1.2.0
+git@github.com:ministryofjustice/sensu-formula.git==v4.0.0
+git@github.com:ministryofjustice/elasticsearch-formula.git==v1.3.1
+
