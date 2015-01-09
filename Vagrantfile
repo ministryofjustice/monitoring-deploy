@@ -1,6 +1,13 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+stub_name = "mon-v"
+
+precise_box = 'mikepea/precise64_bigpkg_salt'
+trusty_box = 'mikepea/trusty64_bigpkg_salt'
+#precise_box = 'hashicorp/precise64'
+#trusty_box = 'ubuntu/trusty64'
+
 base_dir = File.dirname(__FILE__)
 [ 'salt/master/vagrant/templates', 'salt/minions/vagrant/templates' ].each do |dir|
   unless File.exists?("#{base_dir}/#{dir}/key")
@@ -12,7 +19,19 @@ end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  config.vm.define "master", primary: true do |master|
+  minions = [
+    { name: 'monitoring-01', memory: '4096', box: precise_box, ip: '192.168.33.41', highstate: true },
+    { name: 'client-01', memory: '1024', box: precise_box, ip: '192.168.33.42' },
+    { name: 'client-02', memory: '1024', box: trusty_box, ip: '192.168.33.43' },
+  ]
+
+  dev_formula = [ 'elasticsearch', 'metrics', 'logstash', 'sensu', 'sentry', 'monitoring' ]
+
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :box
+  end
+
+  config.vm.define "master.#{stub_name}", primary: true do |master|
 
     # mount salt required folders
     master.vm.synced_folder "salt", "/srv/salt/"
@@ -20,16 +39,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     master.vm.synced_folder "vendor/_root", "/srv/salt-formulas"
     master.vm.synced_folder "vendor/formula-repos", "/srv/formula-repos"
 
-    master.vm.box = "precise64"
-    master.vm.box_url = "http://files.vagrantup.com/precise64.box"
-    master.vm.hostname = "master"
+    dev_formula.each do |f|
+      master.vm.synced_folder "../#{f}-formula/#{f}/", "/srv/salt/#{f}"
+    end
 
-    master.vm.network :private_network, ip: "192.168.33.80"
+    master.vm.box = "ubuntu/trusty64"
+    master.vm.hostname = "master.#{stub_name}"
+
+    master.vm.network :private_network, ip: "192.168.33.40"
 
     master.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", "1024"]
-      v.name = "master"
+      v.name = "master.#{stub_name}"
     end
+
+    master.vm.provision :shell,
+      inline: "apt-get -y install lvm2"
 
     master.vm.provision :salt do |salt|
 
@@ -45,60 +70,63 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       salt.minion_key     = minion_config_dir + 'key'
       salt.minion_pub     = minion_config_dir + 'key.pub'
 
+      salt.install_type = "git"
+      salt.install_args = "v2014.1.13"
+
+      salt.run_highstate = true
       salt.verbose = true
 
     end
+
+    master.vm.provision :shell,
+      inline: "cd /etc/salt/pki/master/minions && for m in #{minions.map { |m| m[:name] }.join(' ')}; do ln -s master.#{stub_name} $m.#{stub_name}; done"
 
   end
 
-  config.vm.define "monitoring" do |monitoring|
+  minions.each do |minion|
+    config.vm.define "#{minion[:name]}.#{stub_name}" do |vm_config|
 
-    monitoring.vm.synced_folder "data/graphite/whisper", "/srv/graphite/storage/whisper", mount_options: ['dmode=777', 'fmode=666'], create: true
+      vm_config.vm.box = minion[:box]
+      vm_config.vm.hostname = "#{minion[:name]}.#{stub_name}"
 
-    monitoring.vm.box = "precise64"
-    monitoring.vm.box_url = "http://files.vagrantup.com/precise64.box"
-    monitoring.vm.hostname = "monitoring"
+      if minion[:name] =~ /monitoring/
+        vm_config.vm.synced_folder "data/graphite/whisper", "/srv/graphite/storage/whisper", mount_options: ['dmode=777', 'fmode=666'], create: true
+      end
 
-    monitoring.vm.network :private_network, ip: "192.168.33.81"
+      vm_config.vm.network :private_network, ip: minion[:ip]
+      minion.fetch(:code_repos, []).each do |code_repo|
+        vm_config.vm.synced_folder "../#{code_repo[:repo]}", "/srv/vagrant_repos/#{code_repo[:mount]}"
+      end
 
-    monitoring.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--memory", "2048"]
-      v.name = "monitoring"
-    end
+      vm_config.vm.provider "virtualbox" do |v|
+        v.customize ["modifyvm", :id, "--memory", minion[:memory]]
+        v.name = minion[:name]
+      end
 
-    monitoring.vm.provision :salt do |salt|
+      metarole = minion.fetch(:metarole) { minion.fetch(:name).split('-').first }
+      minion_config = "minion.#{metarole}"
 
-      minion_config_dir   = 'salt/minions/vagrant/templates/'
-      salt.minion_config  = minion_config_dir + "minion.monitoring"
-      salt.minion_key     = minion_config_dir + 'key'
-      salt.minion_pub     = minion_config_dir + 'key.pub'
+      vm_config.vm.provision :shell,
+        inline: "test -f /etc/salt/minion_id && rm -f /etc/salt/minion_id && stop salt-minion || true"
 
-      salt.verbose = true
-    end
+      vm_config.vm.provision :shell,
+        inline: "apt-get -y install lvm2"
 
-  end
+      vm_config.vm.provision :salt do |salt|
+        minion_config_dir   = 'salt/minions/vagrant/templates/'
+        salt.minion_config  = minion_config_dir + minion_config
+        salt.minion_key     = minion_config_dir + 'key'
+        salt.minion_pub     = minion_config_dir + 'key.pub'
 
-  config.vm.define "client1" do |node|
+        salt.install_type = "git"
+        salt.install_args = "v2014.1.13"
 
-    node.vm.box = "precise64"
-    node.vm.box_url = "http://files.vagrantup.com/precise64.box"
-    node.vm.hostname = "client1"
+        salt.verbose = true
+        if minion[:highstate]
+          salt.run_highstate = true
+        end
+      end
 
-    node.vm.network :private_network, ip: "192.168.33.82"
-
-    node.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--memory", "1024"]
-      v.name = node.vm.hostname
-    end
-
-    node.vm.provision :salt do |salt|
-
-      minion_config_dir   = 'salt/minions/vagrant/templates/'
-      salt.minion_config  = minion_config_dir + "minion.client"
-      salt.minion_key     = minion_config_dir + 'key'
-      salt.minion_pub     = minion_config_dir + 'key.pub'
-
-      salt.verbose = true
     end
 
   end

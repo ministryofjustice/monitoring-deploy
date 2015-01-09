@@ -1,6 +1,5 @@
 base:
   '*':
-    - minions.base
     - hardening
     - admins
     - repos.sensu
