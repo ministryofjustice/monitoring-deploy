@@ -25,6 +25,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     { name: 'client-02', memory: '1024', box: trusty_box, ip: '192.168.33.43' },
   ]
 
+  dev_formula = [ 'elasticsearch', 'metrics', 'logstash', 'sensu', 'sentry', 'monitoring' ]
+
   config.vm.define "master.#{stub_name}", primary: true do |master|
 
     # mount salt required folders
@@ -32,6 +34,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     master.vm.synced_folder "pillars", "/srv/pillars/"
     master.vm.synced_folder "vendor/_root", "/srv/salt-formulas"
     master.vm.synced_folder "vendor/formula-repos", "/srv/formula-repos"
+
+    dev_formula.each do |f|
+      master.vm.synced_folder "../#{f}-formula/#{f}/", "/srv/salt/#{f}"
+    end
 
     master.vm.box = "ubuntu/trusty64"
     master.vm.hostname = "master.#{stub_name}"
