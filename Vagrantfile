@@ -27,6 +27,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   dev_formula = [ 'elasticsearch', 'metrics', 'logstash', 'sensu', 'sentry', 'monitoring' ]
 
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :box
+  end
+
   config.vm.define "master.#{stub_name}", primary: true do |master|
 
     # mount salt required folders
