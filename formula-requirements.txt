@@ -7,6 +7,7 @@ git@github.com:ministryofjustice/hosts-formula.git==v2.0.0
 git@github.com:ministryofjustice/nginx-formula.git==v2.1.0
 
 # Pin dep
+git@github.com:ministryofjustice/java-formula.git==v1.0.1
 git@github.com:ministryofjustice/supervisor-formula.git==v1.0.0
 git@github.com:ministryofjustice/python-formula.git==v1.0.2
 git@github.com:ministryofjustice/repos-formula.git==v1.0.1
