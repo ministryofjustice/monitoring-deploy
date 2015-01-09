@@ -1,4 +1,4 @@
-master: 192.168.33.80
+master: 192.168.33.40
 
 grains:
   provider: vagrant
