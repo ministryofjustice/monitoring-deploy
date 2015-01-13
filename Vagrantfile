@@ -26,6 +26,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   ]
 
   dev_formula = [ 'elasticsearch', 'metrics', 'logstash', 'sensu', 'sentry', 'monitoring' ]
+  dynamic_dir = ['_modules', '_grains', '_renderers', '_returners', '_states']
 
   if Vagrant.has_plugin?("vagrant-cachier")
     config.cache.scope = :box
@@ -41,6 +42,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     dev_formula.each do |f|
       master.vm.synced_folder "../#{f}-formula/#{f}/", "/srv/salt/#{f}"
+      # This loop takes care of dynamic modules states etc.
+      # You need to vagrant provision when you create new states
+      # thereafter the changes are synced
+      dynamic_dir.each do |ddir|
+        if File.directory?("../#{f}-formula/#{ddir}")
+          master.vm.synced_folder "../#{f}-formula/#{ddir}/", "/srv/salt-dynamic/#{f}"
+          master.vm.provision :shell,
+            inline: "mkdir -p /srv/salt/#{ddir} && for f in /srv/salt-dynamic/#{f}/*; do ln -sf $f /srv/salt/#{ddir}; done"
+        end
+      end
     end
 
     master.vm.box = "ubuntu/trusty64"
