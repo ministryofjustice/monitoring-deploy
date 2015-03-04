@@ -1,4 +1,5 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+# -*- ruby -*-
 VAGRANTFILE_API_VERSION = "2"
 
 stub_name = "mon-v"
@@ -41,7 +42,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     master.vm.synced_folder "vendor/formula-repos", "/srv/formula-repos"
 
     dev_formula.each do |f|
-      master.vm.synced_folder "../#{f}-formula/#{f}/", "/srv/salt/#{f}"
+      master.vm.synced_folder "../#{f}-formula/#{f}/", "/srv/salt/#{f}" if File.directory?("../#{f}-formula/#{f}")
+
       # This loop takes care of dynamic modules states etc.
       # You need to vagrant provision when you create new states
       # thereafter the changes are synced
