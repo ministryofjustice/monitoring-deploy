@@ -25,8 +25,8 @@ Hosts File
 
 To communicate with the instances, you will need the following local hosts entries in /etc/hosts::
 
-    192.168.33.80 salt.local salt
-    192.168.33.81 graphite.local grafana.local sensu.local elasticsearch.local kibana.local
+    192.168.33.40 salt.local salt
+    192.168.33.41 graphite.local grafana.local sensu.local elasticsearch.local kibana.local
 
 Firewall
 ~~~~~~~~
