@@ -35,6 +35,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.define "master.#{stub_name}", primary: true do |master|
 
+    # Try to force this to virtualbox, and VMWare. We have to mention vmware_fusion here 
+    master.vm.provider "virtualbox"
+    master.vm.provider "vmware_fusion"
+
     # mount salt required folders
     master.vm.synced_folder "salt", "/srv/salt/"
     master.vm.synced_folder "pillars", "/srv/pillars/"
@@ -105,6 +109,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if minion[:name] =~ /monitoring/
         vm_config.vm.synced_folder "data/graphite/whisper", "/srv/graphite/storage/whisper", mount_options: ['dmode=777', 'fmode=666'], create: true
       end
+
+      # Force it to the virtualbox provider - the IPs are fixed so it has to be
+      # on virtual box else it will complain about networks not matching
+      vm_config.vm.provider "virtualbox"
+      vm_config.vm.provider "vmware_fusion"
 
       vm_config.vm.network :private_network, ip: minion[:ip]
       minion.fetch(:code_repos, []).each do |code_repo|
