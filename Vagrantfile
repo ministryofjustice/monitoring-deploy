@@ -4,8 +4,8 @@ VAGRANTFILE_API_VERSION = "2"
 
 stub_name = "mon-v"
 
-precise_box = 'mikepea/precise64_bigpkg_salt'
-trusty_box = 'mikepea/trusty64_bigpkg_salt'
+precise_box = 'mojdigital/ubuntu-12.04-amd64'
+trusty_box = 'mojdigital/ubuntu-14.04-amd64'
 #precise_box = 'hashicorp/precise64'
 #trusty_box = 'ubuntu/trusty64'
 
@@ -60,7 +60,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
     end
 
-    master.vm.box = "ubuntu/trusty64"
+    master.vm.box = trusty_box
     master.vm.hostname = "master.#{stub_name}"
 
     master.vm.network :private_network, ip: "192.168.33.40"
