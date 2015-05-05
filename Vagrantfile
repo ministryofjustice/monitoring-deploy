@@ -99,7 +99,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       # Set the minion id
       salt.bootstrap_options = "-i #{master.vm.hostname}"
 
-      salt.run_highstate = true
+      # We don't want to highstate the master by default, as it will fail
+      # because the monitoring box won't have been highstated yet
+      salt.run_highstate = false
       salt.verbose = true
 
     end
