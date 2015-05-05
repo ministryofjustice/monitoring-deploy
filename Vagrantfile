@@ -76,11 +76,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     master.vm.provision :salt do |salt|
 
       master_config_dir   = 'salt/master/vagrant/templates/'
+
       salt.install_master = true
       salt.master_config  = master_config_dir + "master"
       salt.master_key     = master_config_dir + 'key'
       salt.master_pub     = master_config_dir + 'key.pub'
-      salt.seed_master = { master: salt.master_pub}
+      salt.seed_master   = {
+        master.vm.hostname => salt.master_pub,
+      }
 
       minion_config_dir   = 'salt/minions/vagrant/templates/'
       salt.minion_config  = minion_config_dir + "minion.master"
@@ -89,14 +92,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       salt.install_type = "git"
       salt.install_args = "v2014.1.13"
+      minions.each do |m|
+        salt.seed_master["#{m[:name]}.#{stub_name}"] = salt.minion_pub
+      end
+
+      # Set the minion id
+      salt.bootstrap_options = "-i #{master.vm.hostname}"
 
       salt.run_highstate = true
       salt.verbose = true
 
     end
-
-    master.vm.provision :shell,
-      inline: "cd /etc/salt/pki/master/minions && for m in #{minions.map { |m| m[:name] }.join(' ')}; do ln -s master.#{stub_name} $m.#{stub_name}; done"
 
   end
 
@@ -129,9 +135,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       minion_config = "minion.#{metarole}"
 
       vm_config.vm.provision :shell,
-        inline: "test -f /etc/salt/minion_id && rm -f /etc/salt/minion_id && stop salt-minion || true"
-
-      vm_config.vm.provision :shell,
         inline: "apt-get -y install lvm2"
 
       vm_config.vm.provision :salt do |salt|
@@ -142,6 +145,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         salt.install_type = "git"
         salt.install_args = "v2014.1.13"
+        salt.bootstrap_options = "-i #{vm_config.vm.hostname}"
 
         salt.verbose = true
         if minion[:highstate]
