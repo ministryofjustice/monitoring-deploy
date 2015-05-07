@@ -4,8 +4,8 @@ VAGRANTFILE_API_VERSION = "2"
 
 stub_name = "mon-v"
 
-precise_box = 'mikepea/precise64_bigpkg_salt'
-trusty_box = 'mikepea/trusty64_bigpkg_salt'
+precise_box = 'mojdigital/ubuntu-12.04-amd64'
+trusty_box = 'mojdigital/ubuntu-14.04-amd64'
 #precise_box = 'hashicorp/precise64'
 #trusty_box = 'ubuntu/trusty64'
 
@@ -35,6 +35,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.define "master.#{stub_name}", primary: true do |master|
 
+    # Try to force this to virtualbox, and VMWare. We have to mention vmware_fusion here 
+    master.vm.provider "virtualbox"
+    master.vm.provider "vmware_fusion"
+
     # mount salt required folders
     master.vm.synced_folder "salt", "/srv/salt/"
     master.vm.synced_folder "pillars", "/srv/pillars/"
@@ -56,7 +60,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
     end
 
-    master.vm.box = "ubuntu/trusty64"
+    master.vm.box = trusty_box
     master.vm.hostname = "master.#{stub_name}"
 
     master.vm.network :private_network, ip: "192.168.33.40"
@@ -72,27 +76,33 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     master.vm.provision :salt do |salt|
 
       master_config_dir   = 'salt/master/vagrant/templates/'
+
       salt.install_master = true
       salt.master_config  = master_config_dir + "master"
       salt.master_key     = master_config_dir + 'key'
       salt.master_pub     = master_config_dir + 'key.pub'
-      salt.seed_master = { master: salt.master_pub}
+      salt.seed_master   = {
+        master.vm.hostname => salt.master_pub,
+      }
 
       minion_config_dir   = 'salt/minions/vagrant/templates/'
       salt.minion_config  = minion_config_dir + "minion.master"
       salt.minion_key     = minion_config_dir + 'key'
       salt.minion_pub     = minion_config_dir + 'key.pub'
 
-      salt.install_type = "git"
-      salt.install_args = "v2014.1.13"
+      minions.each do |m|
+        salt.seed_master["#{m[:name]}.#{stub_name}"] = salt.minion_pub
+      end
 
-      salt.run_highstate = true
+      # Set the minion id
+      salt.bootstrap_options = "-i #{master.vm.hostname}"
+
+      # We don't want to highstate the master by default, as it will fail
+      # because the monitoring box won't have been highstated yet
+      salt.run_highstate = false
       salt.verbose = true
 
     end
-
-    master.vm.provision :shell,
-      inline: "cd /etc/salt/pki/master/minions && for m in #{minions.map { |m| m[:name] }.join(' ')}; do ln -s master.#{stub_name} $m.#{stub_name}; done"
 
   end
 
@@ -105,6 +115,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if minion[:name] =~ /monitoring/
         vm_config.vm.synced_folder "data/graphite/whisper", "/srv/graphite/storage/whisper", mount_options: ['dmode=777', 'fmode=666'], create: true
       end
+
+      # Force it to the virtualbox provider - the IPs are fixed so it has to be
+      # on virtual box else it will complain about networks not matching
+      vm_config.vm.provider "virtualbox"
+      vm_config.vm.provider "vmware_fusion"
 
       vm_config.vm.network :private_network, ip: minion[:ip]
       minion.fetch(:code_repos, []).each do |code_repo|
@@ -120,9 +135,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       minion_config = "minion.#{metarole}"
 
       vm_config.vm.provision :shell,
-        inline: "test -f /etc/salt/minion_id && rm -f /etc/salt/minion_id && stop salt-minion || true"
-
-      vm_config.vm.provision :shell,
         inline: "apt-get -y install lvm2"
 
       vm_config.vm.provision :salt do |salt|
@@ -131,8 +143,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         salt.minion_key     = minion_config_dir + 'key'
         salt.minion_pub     = minion_config_dir + 'key.pub'
 
-        salt.install_type = "git"
-        salt.install_args = "v2014.1.13"
+        salt.bootstrap_options = "-i #{vm_config.vm.hostname}"
 
         salt.verbose = true
         if minion[:highstate]

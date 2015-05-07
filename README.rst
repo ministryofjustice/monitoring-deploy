@@ -19,6 +19,21 @@ To fire up the environment::
     vagrant plugin install vagrant-cachier # To speed things up
     vagrant up
 
+Common Errors
+~~~~~~~~~~~~~
+
+If you don't have vagrant installed, you can download it from https://www.vagrantup.com/downloads.html
+
+If 'vagrant up' gives you an error that starts with something like this -
+
+    "No usable default provider could be found for your system"
+
+- then you'll need to install a virtual host 'provider'. As the error message says:
+
+    "The easiest solution to this message is to install VirtualBox, which is available for free on all major platforms."
+
+You can download VirtualBox from https://www.virtualbox.org/wiki/Downloads
+
 
 Hosts File
 ~~~~~~~~~~
